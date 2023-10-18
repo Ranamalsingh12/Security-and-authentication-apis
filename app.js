@@ -175,12 +175,16 @@
 //   console.log("Server started on port 3000.");
 // });
 
-require('dotenv').config();
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const encrypt = require("mongoose-encryption");
+const md5 = require("md5");
+const bcrypt = require("bcrypt");
+// const encrypt = require("mongoose-encryption");
+
+const saltRounds = 10;
 
 const app = express();
 
@@ -193,14 +197,14 @@ app.use(
   })
 );
 
-const userSchema = new mongoose.Schema ({
+const userSchema = new mongoose.Schema({
   email: String,
   password: String,
 });
 
 // Level - 2 Authentication
-const secret = process.env.SECRET;
-userSchema.plugin(encrypt, {secret: secret, encryptedFields: "password"});
+// const secret = process.env.SECRET;
+// userSchema.plugin(encrypt, {secret: secret, encryptedFields: "password"});
 
 // Model for the schema
 const User = new mongoose.model("User", userSchema);
@@ -257,10 +261,75 @@ app.post("/login", function (req, res) {
 
 */
 
-// Level -2 
+app.post("/register", function (req, res) {
+  const newUser = {
+    email: req.body.email,
+    password: md5(req.body.password),
+  };
 
+  newUser.save(function (err) {
+    if (err) {
+      console.log(err);
+    } else {
+      res.render("secrets");
+    }
+  });
+});
 
+app.post("/login", function (req, res) {
+  const userName = req.body.email;
+  const password = md5(req.body.password);
 
+  newUser.find({ email: userName }, function (err, foundUser) {
+    if (err) {
+      console.log(err);
+    } else {
+      if (foundUser) {
+        if (foundUser.password === password) {
+          res.render("secrets");
+        }
+      }
+    }
+  });
+});
+
+// Level ------> 3
+
+app.post("/register", function (req, res) {
+  bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
+    const newUser = {
+      email: req.body.email,
+      password: hash,
+    };
+
+    newUser.save(function (err) {
+      if (err) {
+        console.log(err);
+      } else {
+        res.render("secrets");
+      }
+    });
+  });
+});
+
+app.post("/login", function (req, res) {
+  const userName = req.body.email;
+  const password = md5(req.body.password);
+
+  newUser.find({ email: userName }, function (err, foundUser) {
+    if (err) {
+      console.log(err);
+    } else {
+      if (foundUser) {
+        bcrypt.compare(password, foundUser.password, function (err, result) {
+          if (result === true) {
+            res.render("secrets");
+          }
+        });
+      }
+    }
+  });
+});
 
 app.listen(3000, function () {
   console.log("Server running on port 3000.");
