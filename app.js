@@ -175,10 +175,12 @@
 //   console.log("Server started on port 3000.");
 // });
 
+require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
+const encrypt = require("mongoose-encryption");
 
 const app = express();
 
@@ -191,10 +193,14 @@ app.use(
   })
 );
 
-const userSchema = {
+const userSchema = new mongoose.Schema ({
   email: String,
   password: String,
-};
+});
+
+// Level - 2 Authentication
+const secret = process.env.SECRET;
+userSchema.plugin(encrypt, {secret: secret, encryptedFields: "password"});
 
 // Model for the schema
 const User = new mongoose.model("User", userSchema);
@@ -213,7 +219,9 @@ app.get("/register", function (req, res) {
   res.render("register");
 });
 
-//Post the email and login
+/*
+-------> Level-1 Authentications
+Post the email and login
 
 app.post("/register", function (req, res) {
   const newUser = {
@@ -246,6 +254,13 @@ app.post("/login", function (req, res) {
     }
   });
 });
+
+*/
+
+// Level -2 
+
+
+
 
 app.listen(3000, function () {
   console.log("Server running on port 3000.");
